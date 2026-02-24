@@ -64,36 +64,32 @@
       width: 78px;
       height: 78px;
       border-radius: 999px;
-      background: #f97316;
+      background: #4b5563;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 36px;
-      box-shadow: 0 4px 0 #b45309;
-      transform: translateY(56px);
-      transition: transform 0.12s ease-out;
+      font-size: 32px;
+      box-shadow: 0 4px 0 #111827;
+      transition: transform 0.12s ease-out, background 0.1s;
     }
-    .mole.show {
-      transform: translateY(0);
-    }
-    .mole.good {
+    .mole.revealed.good {
       background: #22c55e;
       box-shadow: 0 4px 0 #15803d;
     }
-    .mole.bad {
+    .mole.revealed.bad {
       background: #ef4444;
       box-shadow: 0 4px 0 #b91c1c;
     }
     #infoBar {
       display: flex;
       align-items: center;
-      justify-content: space-between;
+      justify-content: center;
       width: 100%;
       gap: 12px;
       margin-bottom: 8px;
       font-size: 14px;
     }
-    #score, #timer {
+    #score {
       padding: 4px 8px;
       border-radius: 999px;
       background: #020617;
@@ -116,10 +112,6 @@
     }
     button:hover {
       background: #2563eb;
-    }
-    button:disabled {
-      opacity: 0.5;
-      cursor: default;
     }
     #message {
       min-height: 1.4em;
@@ -161,25 +153,23 @@
         grid-template-rows: repeat(3, 80px);
       }
       .hole { width: 80px; height: 80px; }
-      .mole { width: 70px; height: 70px; font-size: 30px; }
+      .mole { width: 70px; height: 70px; font-size: 28px; }
     }
   </style>
 </head>
 <body>
   <h1>打地鼠 - 處罰版</h1>
-  <div id="subtitle">九隻地鼠，其中 6 隻沒事、3 隻有事。打到有事的，就抽一個處罰。</div>
+  <div id="subtitle">九隻地鼠，其中 3 隻是壞地鼠。每一隻一開始都長一樣，按下去才知道是好是壞。打到 3 隻壞地鼠就結束。</div>
 
   <div id="game">
     <div id="infoBar">
-      <div id="score">分數：0</div>
-      <div id="timer">時間：30 秒</div>
+      <div id="score">已找到壞地鼠：0 / 3</div>
     </div>
 
     <div id="grid"></div>
 
     <div id="controls">
-      <button id="startBtn">開始遊戲</button>
-      <button id="stopBtn" disabled>結束</button>
+      <button id="restartBtn">重新洗牌開始</button>
     </div>
 
     <div id="message"></div>
@@ -194,13 +184,10 @@
   <script>
     const gridEl = document.getElementById('grid');
     const scoreEl = document.getElementById('score');
-    const timerEl = document.getElementById('timer');
     const messageEl = document.getElementById('message');
-    const startBtn = document.getElementById('startBtn');
-    const stopBtn = document.getElementById('stopBtn');
+    const restartBtn = document.getElementById('restartBtn');
     const punishmentsInput = document.getElementById('punishmentsInput');
 
-    // 預設處罰：之後你可以在畫面上自己改
     const defaultPunishments = [
       '請大家喝一杯飲料',
       '深蹲 20 下',
@@ -210,23 +197,17 @@
       '讓旁邊的人指定一個小懲罰（友善版）'
     ];
 
-    // 初始化 textarea 內容
     punishmentsInput.value = defaultPunishments.join('\n');
 
-    const totalHoles = 9; // 九隻地鼠
+    const totalHoles = 9;
+    const badCountTotal = 3;
     let holes = [];
-    let state = {
-      score: 0,
-      timeLeft: 30,
-      timerId: null,
-      moleTimerId: null,
-      running: false
-    };
+    let badRevealed = 0;
+    let gameOver = false;
 
     function createGrid() {
       gridEl.innerHTML = '';
       holes = [];
-
       for (let i = 0; i < totalHoles; i++) {
         const hole = document.createElement('div');
         hole.className = 'hole';
@@ -234,14 +215,46 @@
 
         const mole = document.createElement('div');
         mole.className = 'mole';
-        mole.innerHTML = '`'; // 先放個符號，後面會換
+        mole.textContent = '❓';
 
         hole.appendChild(mole);
         gridEl.appendChild(hole);
-        holes.push({ hole, mole, type: 'good' });
+
+        holes.push({
+          hole,
+          mole,
+          type: 'good',
+          revealed: false
+        });
 
         hole.addEventListener('click', () => handleHit(i));
       }
+    }
+
+    function shuffle(arr) {
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+    }
+
+    function setupMoles() {
+      // 重置狀態
+      badRevealed = 0;
+      gameOver = false;
+      scoreEl.textContent = `已找到壞地鼠：${badRevealed} / ${badCountTotal}`;
+      messageEl.textContent = '點任意地鼠，看看是好是壞。';
+
+      const indices = [...Array(totalHoles).keys()];
+      shuffle(indices);
+      const badSet = new Set(indices.slice(0, badCountTotal));
+
+      holes.forEach((slot, i) => {
+        slot.type = badSet.has(i) ? 'bad' : 'good';
+        slot.revealed = false;
+        slot.mole.classList.remove('revealed', 'good', 'bad');
+        slot.mole.textContent = '❓';
+      });
     }
 
     function getPunishments() {
@@ -259,108 +272,38 @@
     }
 
     function handleHit(index) {
-      if (!state.running) return;
+      if (gameOver) return;
       const slot = holes[index];
+      if (slot.revealed) return; // 同一隻按一次就好
+
+      slot.revealed = true;
       const mole = slot.mole;
-      if (!mole.classList.contains('show')) return;
+      mole.classList.add('revealed');
 
       if (slot.type === 'good') {
-        state.score += 1;
-        messageEl.textContent = '👍 打到沒事的地鼠，加一分！';
+        mole.classList.add('good');
+        mole.textContent = '🐹';
+        messageEl.textContent = '👍 這隻是好地鼠，安全～';
       } else {
+        mole.classList.add('bad');
+        mole.textContent = '💣';
+        badRevealed++;
         const p = randomPunishment();
-        state.score -= 1;
-        messageEl.textContent = '⚠️ 打到有事的地鼠！處罰：' + p;
-      }
-      scoreEl.textContent = '分數：' + state.score;
+        messageEl.textContent = '⚠️ 壞地鼠！處罰：' + p;
+        scoreEl.textContent = `已找到壞地鼠：${badRevealed} / ${badCountTotal}`;
 
-      // 讓被打到的地鼠縮回去
-      mole.classList.remove('show');
-    }
-
-    function spawnMoles() {
-      // 先全部縮回去
-      holes.forEach(({ mole }) => mole.classList.remove('show'));
-
-      // 決定哪 3 隻是有事的
-      const indices = [...Array(totalHoles).keys()];
-      shuffle(indices);
-      const badSet = new Set(indices.slice(0, 3)); // 3 隻有事
-
-      holes.forEach(({ mole }, i) => {
-        const isBad = badSet.has(i);
-        mole.classList.remove('good', 'bad');
-        if (isBad) {
-          mole.classList.add('bad');
-          mole.textContent = '💣';
-          holes[i].type = 'bad';
-        } else {
-          mole.classList.add('good');
-          mole.textContent = '🐹';
-          holes[i].type = 'good';
+        if (badRevealed >= badCountTotal) {
+          gameOver = true;
+          messageEl.textContent += ' ｜ 3 隻壞地鼠都被找到，遊戲結束。';
         }
-      });
-
-      // 隨機挑幾隻會冒出來（至少 3 隻）
-      const count = 3 + Math.floor(Math.random() * 3); // 3–5 隻
-      shuffle(indices);
-      for (let i = 0; i < count; i++) {
-        const idx = indices[i];
-        holes[idx].mole.classList.add('show');
       }
     }
 
-    function shuffle(arr) {
-      for (let i = arr.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [arr[i], arr[j]] = [arr[j], arr[i]];
-      }
-    }
-
-    function startGame() {
-      if (state.running) return;
-      state.running = true;
-      state.score = 0;
-      state.timeLeft = 30;
-      scoreEl.textContent = '分數：' + state.score;
-      timerEl.textContent = '時間：' + state.timeLeft + ' 秒';
-      messageEl.textContent = '遊戲開始！盡量打沒事的，避開有事的。';
-
-      startBtn.disabled = true;
-      stopBtn.disabled = false;
-      punishmentsInput.disabled = true;
-
-      spawnMoles();
-      state.moleTimerId = setInterval(spawnMoles, 900);
-
-      state.timerId = setInterval(() => {
-        state.timeLeft--;
-        timerEl.textContent = '時間：' + state.timeLeft + ' 秒';
-        if (state.timeLeft <= 0) {
-          endGame();
-        }
-      }, 1000);
-    }
-
-    function endGame() {
-      if (!state.running) return;
-      state.running = false;
-      clearInterval(state.timerId);
-      clearInterval(state.moleTimerId);
-      holes.forEach(({ mole }) => mole.classList.remove('show'));
-
-      startBtn.disabled = false;
-      stopBtn.disabled = true;
-      punishmentsInput.disabled = false;
-
-      messageEl.textContent = '遊戲結束！最終分數：' + state.score;
-    }
-
-    startBtn.addEventListener('click', startGame);
-    stopBtn.addEventListener('click', endGame);
+    restartBtn.addEventListener('click', setupMoles);
 
     // 初始化
     createGrid();
+    setupMoles();
   </script>
 </body>
 </html>
