@@ -21,6 +21,7 @@
 
     body {
       margin: 0;
+      touch-action: manipulation;
       min-height: 100vh;
       font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
       background:
@@ -421,7 +422,10 @@
         audioCtx.resume();
       }
       if (bgm.paused) {
-        bgm.volume = 0.18;
+        bgm.volume = 0.4;
+        if (bgm.currentTime === 0) {
+          bgm.currentTime = 0.01; // iOS 有時需要略過 0 秒避免靜音 bug
+        }
         bgm.play().catch(() => {});
         musicIcon.textContent = '🎵';
         musicLabel.textContent = '音樂開';
@@ -549,6 +553,16 @@
         toggleMusic();
       }
     });
+
+    // 禁用手機雙擊放大
+    let lastTouchEnd = 0;
+    document.addEventListener('touchend', function (event) {
+      const now = Date.now();
+      if (now - lastTouchEnd <= 300) {
+        event.preventDefault();
+      }
+      lastTouchEnd = now;
+    }, { passive: false });
 
     createGrid();
     setupMoles();
