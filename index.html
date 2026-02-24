@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <title>打地鼠遊戲 - dragonBill7</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #111827;
+      color: #e5e7eb;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      min-height: 100vh;
+      margin: 0;
+      padding: 24px 12px 40px;
+    }
+    h1 {
+      margin: 0 0 8px;
+      font-size: 24px;
+    }
+    #subtitle {
+      font-size: 13px;
+      color: #9ca3af;
+      margin-bottom: 16px;
+      text-align: center;
+    }
+    #game {
+      background: #020617;
+      padding: 16px 16px 20px;
+      border-radius: 12px;
+      box-shadow: 0 10px 25px rgba(15,23,42,0.7);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    #grid {
+      display: grid;
+      grid-template-columns: repeat(3, 90px);
+      grid-template-rows: repeat(3, 90px);
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    .hole {
+      width: 90px;
+      height: 90px;
+      border-radius: 999px;
+      background: radial-gradient(circle at 30% 20%, #374151, #020617 70%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+      transition: transform 0.08s ease-out, box-shadow 0.08s;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.6);
+    }
+    .hole:active {
+      transform: translateY(1px) scale(0.97);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.8);
+    }
+    .mole {
+      width: 78px;
+      height: 78px;
+      border-radius: 999px;
+      background: #f97316;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 36px;
+      box-shadow: 0 4px 0 #b45309;
+      transform: translateY(56px);
+      transition: transform 0.12s ease-out;
+    }
+    .mole.show {
+      transform: translateY(0);
+    }
+    .mole.good {
+      background: #22c55e;
+      box-shadow: 0 4px 0 #15803d;
+    }
+    .mole.bad {
+      background: #ef4444;
+      box-shadow: 0 4px 0 #b91c1c;
+    }
+    #infoBar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+      gap: 12px;
+      margin-bottom: 8px;
+      font-size: 14px;
+    }
+    #score, #timer {
+      padding: 4px 8px;
+      border-radius: 999px;
+      background: #020617;
+      border: 1px solid #1f2937;
+    }
+    #controls {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+    button {
+      background: #3b82f6;
+      border: none;
+      color: white;
+      padding: 6px 14px;
+      border-radius: 999px;
+      cursor: pointer;
+      font-size: 13px;
+      letter-spacing: 0.02em;
+    }
+    button:hover {
+      background: #2563eb;
+    }
+    button:disabled {
+      opacity: 0.5;
+      cursor: default;
+    }
+    #message {
+      min-height: 1.4em;
+      font-size: 14px;
+      text-align: center;
+      margin-top: 4px;
+    }
+    #punishmentsBox {
+      margin-top: 14px;
+      width: 100%;
+      max-width: 360px;
+      font-size: 12px;
+      color: #9ca3af;
+      border-top: 1px dashed #1f2937;
+      padding-top: 8px;
+    }
+    #punishmentsBox textarea {
+      width: 100%;
+      min-height: 60px;
+      margin-top: 6px;
+      border-radius: 6px;
+      border: 1px solid #374151;
+      background: #020617;
+      color: #e5e7eb;
+      padding: 6px 8px;
+      font-size: 12px;
+      resize: vertical;
+      box-sizing: border-box;
+    }
+    #punishmentsBox small {
+      display: block;
+      margin-top: 4px;
+      font-size: 11px;
+    }
+
+    @media (max-width: 480px) {
+      #grid {
+        grid-template-columns: repeat(3, 80px);
+        grid-template-rows: repeat(3, 80px);
+      }
+      .hole { width: 80px; height: 80px; }
+      .mole { width: 70px; height: 70px; font-size: 30px; }
+    }
+  </style>
+</head>
+<body>
+  <h1>打地鼠 - 處罰版</h1>
+  <div id="subtitle">九隻地鼠，其中 6 隻沒事、3 隻有事。打到有事的，就抽一個處罰。</div>
+
+  <div id="game">
+    <div id="infoBar">
+      <div id="score">分數：0</div>
+      <div id="timer">時間：30 秒</div>
+    </div>
+
+    <div id="grid"></div>
+
+    <div id="controls">
+      <button id="startBtn">開始遊戲</button>
+      <button id="stopBtn" disabled>結束</button>
+    </div>
+
+    <div id="message"></div>
+
+    <div id="punishmentsBox">
+      <div>目前的處罰清單（可自行修改，每行一個）：</div>
+      <textarea id="punishmentsInput"></textarea>
+      <small>預設我幫你準備幾個；你可以改成自己的，例如「請大家喝飲料」、「深蹲 20 下」等等。</small>
+    </div>
+  </div>
+
+  <script>
+    const gridEl = document.getElementById('grid');
+    const scoreEl = document.getElementById('score');
+    const timerEl = document.getElementById('timer');
+    const messageEl = document.getElementById('message');
+    const startBtn = document.getElementById('startBtn');
+    const stopBtn = document.getElementById('stopBtn');
+    const punishmentsInput = document.getElementById('punishmentsInput');
+
+    // 預設處罰：之後你可以在畫面上自己改
+    const defaultPunishments = [
+      '請大家喝一杯飲料',
+      '深蹲 20 下',
+      '模仿一種動物叫聲 10 秒',
+      '當場唱一小段歌',
+      '今天的垃圾你包辦',
+      '讓旁邊的人指定一個小懲罰（友善版）'
+    ];
+
+    // 初始化 textarea 內容
+    punishmentsInput.value = defaultPunishments.join('\n');
+
+    const totalHoles = 9; // 九隻地鼠
+    let holes = [];
+    let state = {
+      score: 0,
+      timeLeft: 30,
+      timerId: null,
+      moleTimerId: null,
+      running: false
+    };
+
+    function createGrid() {
+      gridEl.innerHTML = '';
+      holes = [];
+
+      for (let i = 0; i < totalHoles; i++) {
+        const hole = document.createElement('div');
+        hole.className = 'hole';
+        hole.dataset.index = i;
+
+        const mole = document.createElement('div');
+        mole.className = 'mole';
+        mole.innerHTML = '`'; // 先放個符號，後面會換
+
+        hole.appendChild(mole);
+        gridEl.appendChild(hole);
+        holes.push({ hole, mole, type: 'good' });
+
+        hole.addEventListener('click', () => handleHit(i));
+      }
+    }
+
+    function getPunishments() {
+      const lines = punishmentsInput.value
+        .split(/\r?\n/)
+        .map(s => s.trim())
+        .filter(Boolean);
+      return lines.length ? lines : defaultPunishments;
+    }
+
+    function randomPunishment() {
+      const list = getPunishments();
+      const idx = Math.floor(Math.random() * list.length);
+      return list[idx];
+    }
+
+    function handleHit(index) {
+      if (!state.running) return;
+      const slot = holes[index];
+      const mole = slot.mole;
+      if (!mole.classList.contains('show')) return;
+
+      if (slot.type === 'good') {
+        state.score += 1;
+        messageEl.textContent = '👍 打到沒事的地鼠，加一分！';
+      } else {
+        const p = randomPunishment();
+        state.score -= 1;
+        messageEl.textContent = '⚠️ 打到有事的地鼠！處罰：' + p;
+      }
+      scoreEl.textContent = '分數：' + state.score;
+
+      // 讓被打到的地鼠縮回去
+      mole.classList.remove('show');
+    }
+
+    function spawnMoles() {
+      // 先全部縮回去
+      holes.forEach(({ mole }) => mole.classList.remove('show'));
+
+      // 決定哪 3 隻是有事的
+      const indices = [...Array(totalHoles).keys()];
+      shuffle(indices);
+      const badSet = new Set(indices.slice(0, 3)); // 3 隻有事
+
+      holes.forEach(({ mole }, i) => {
+        const isBad = badSet.has(i);
+        mole.classList.remove('good', 'bad');
+        if (isBad) {
+          mole.classList.add('bad');
+          mole.textContent = '💣';
+          holes[i].type = 'bad';
+        } else {
+          mole.classList.add('good');
+          mole.textContent = '🐹';
+          holes[i].type = 'good';
+        }
+      });
+
+      // 隨機挑幾隻會冒出來（至少 3 隻）
+      const count = 3 + Math.floor(Math.random() * 3); // 3–5 隻
+      shuffle(indices);
+      for (let i = 0; i < count; i++) {
+        const idx = indices[i];
+        holes[idx].mole.classList.add('show');
+      }
+    }
+
+    function shuffle(arr) {
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+    }
+
+    function startGame() {
+      if (state.running) return;
+      state.running = true;
+      state.score = 0;
+      state.timeLeft = 30;
+      scoreEl.textContent = '分數：' + state.score;
+      timerEl.textContent = '時間：' + state.timeLeft + ' 秒';
+      messageEl.textContent = '遊戲開始！盡量打沒事的，避開有事的。';
+
+      startBtn.disabled = true;
+      stopBtn.disabled = false;
+      punishmentsInput.disabled = true;
+
+      spawnMoles();
+      state.moleTimerId = setInterval(spawnMoles, 900);
+
+      state.timerId = setInterval(() => {
+        state.timeLeft--;
+        timerEl.textContent = '時間：' + state.timeLeft + ' 秒';
+        if (state.timeLeft <= 0) {
+          endGame();
+        }
+      }, 1000);
+    }
+
+    function endGame() {
+      if (!state.running) return;
+      state.running = false;
+      clearInterval(state.timerId);
+      clearInterval(state.moleTimerId);
+      holes.forEach(({ mole }) => mole.classList.remove('show'));
+
+      startBtn.disabled = false;
+      stopBtn.disabled = true;
+      punishmentsInput.disabled = false;
+
+      messageEl.textContent = '遊戲結束！最終分數：' + state.score;
+    }
+
+    startBtn.addEventListener('click', startGame);
+    stopBtn.addEventListener('click', endGame);
+
+    // 初始化
+    createGrid();
+  </script>
+</body>
+</html>
