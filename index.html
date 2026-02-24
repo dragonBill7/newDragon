@@ -3,144 +3,283 @@
 <head>
   <meta charset="UTF-8" />
   <title>打地鼠遊戲 - dragonBill7</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
+    :root {
+      --bg: #020617;
+      --panel: #020617;
+      --accent: #38bdf8;
+      --accent-soft: rgba(56,189,248,0.16);
+      --good: #22c55e;
+      --good-dark: #15803d;
+      --bad: #f97373;
+      --bad-dark: #b91c1c;
+      --text-subtle: #9ca3af;
+    }
+
+    * { box-sizing: border-box; }
+
     body {
+      margin: 0;
+      min-height: 100vh;
       font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-      background: #111827;
+      background:
+        radial-gradient(circle at top left, #1e293b 0, transparent 55%),
+        radial-gradient(circle at bottom right, #0f172a 0, transparent 55%),
+        var(--bg);
       color: #e5e7eb;
       display: flex;
-      flex-direction: column;
       align-items: center;
-      justify-content: flex-start;
-      min-height: 100vh;
-      margin: 0;
-      padding: 24px 12px 40px;
+      justify-content: center;
+      padding: 16px;
     }
-    h1 {
-      margin: 0 0 8px;
-      font-size: 24px;
-    }
-    #subtitle {
-      font-size: 13px;
-      color: #9ca3af;
-      margin-bottom: 16px;
-      text-align: center;
-    }
-    #game {
-      background: #020617;
-      padding: 16px 16px 20px;
-      border-radius: 12px;
-      box-shadow: 0 10px 25px rgba(15,23,42,0.7);
+
+    #app {
+      width: 100%;
+      max-width: 480px;
+      background: linear-gradient(145deg, #020617, #020617);
+      border-radius: 20px;
+      box-shadow:
+        0 24px 60px rgba(15,23,42,0.9),
+        0 0 0 1px rgba(148,163,184,0.16);
+      padding: 18px 16px 16px;
       display: flex;
       flex-direction: column;
-      align-items: center;
+      gap: 12px;
     }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+    }
+
+    #titleBlock {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    #logo {
+      width: 32px;
+      height: 32px;
+      border-radius: 12px;
+      background: radial-gradient(circle at 30% 20%, #38bdf8, #0f172a);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      box-shadow: 0 0 0 1px rgba(148,163,184,0.3);
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 18px;
+      letter-spacing: 0.04em;
+    }
+
+    #subtitle {
+      margin: 0;
+      font-size: 11px;
+      color: var(--text-subtle);
+    }
+
+    #musicToggle {
+      border-radius: 999px;
+      border: 1px solid rgba(148,163,184,0.6);
+      background: rgba(15,23,42,0.9);
+      color: #e5e7eb;
+      font-size: 11px;
+      padding: 4px 10px;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      cursor: pointer;
+    }
+
+    #musicToggle span.icon {
+      font-size: 13px;
+    }
+
+    #panel {
+      margin-top: 4px;
+      background: radial-gradient(circle at top, rgba(56,189,248,0.14), transparent 55%),
+                  rgba(15,23,42,0.96);
+      border-radius: 16px;
+      padding: 12px 10px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      box-shadow: inset 0 0 0 1px rgba(15,23,42,0.9);
+    }
+
+    #infoBar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      font-size: 13px;
+    }
+
+    #score {
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: rgba(15,23,42,0.9);
+      border: 1px solid rgba(148,163,184,0.4);
+      box-shadow: 0 2px 6px rgba(15,23,42,0.8);
+    }
+
+    #hint {
+      font-size: 11px;
+      color: var(--text-subtle);
+      text-align: right;
+    }
+
+    #gridWrapper {
+      padding: 10px 6px 4px;
+      border-radius: 14px;
+      background: radial-gradient(circle at top, #020617, #020617);
+      box-shadow: inset 0 0 0 1px rgba(30,64,175,0.5);
+    }
+
     #grid {
       display: grid;
-      grid-template-columns: repeat(3, 90px);
-      grid-template-rows: repeat(3, 90px);
-      gap: 12px;
-      margin-bottom: 16px;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      width: 100%;
+      max-width: 360px;
+      margin: 0 auto;
     }
+
     .hole {
-      width: 90px;
-      height: 90px;
-      border-radius: 999px;
-      background: radial-gradient(circle at 30% 20%, #374151, #020617 70%);
+      aspect-ratio: 1 / 1;
+      border-radius: 18px;
+      background: radial-gradient(circle at 30% 20%, #1f2937, #020617 70%);
       display: flex;
       align-items: center;
       justify-content: center;
       cursor: pointer;
       position: relative;
       overflow: hidden;
-      transition: transform 0.08s ease-out, box-shadow 0.08s;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.6);
+      transition: transform 0.08s ease-out, box-shadow 0.08s, background 0.12s;
+      box-shadow: 0 6px 14px rgba(15,23,42,0.9);
     }
+
     .hole:active {
       transform: translateY(1px) scale(0.97);
-      box-shadow: 0 2px 6px rgba(0,0,0,0.8);
+      box-shadow: 0 3px 8px rgba(15,23,42,0.95);
     }
+
+    .hole.revealed-good {
+      background: radial-gradient(circle at 30% 20%, rgba(34,197,94,0.9), #022c22 70%);
+    }
+
+    .hole.revealed-bad {
+      background: radial-gradient(circle at 30% 20%, rgba(239,68,68,0.9), #450a0a 70%);
+    }
+
     .mole {
-      width: 78px;
-      height: 78px;
+      width: 70%;
+      height: 70%;
       border-radius: 999px;
-      background: #4b5563;
+      background: rgba(15,23,42,0.96);
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 32px;
-      box-shadow: 0 4px 0 #111827;
-      transition: transform 0.12s ease-out, background 0.1s;
+      font-size: clamp(26px, 5vw, 34px);
+      box-shadow: 0 4px 0 rgba(15,23,42,1);
+      transform: translateY(6%);
+      transition: transform 0.12s ease-out, background 0.12s, box-shadow 0.12s;
     }
+
     .mole.revealed.good {
-      background: #22c55e;
-      box-shadow: 0 4px 0 #15803d;
+      background: #bbf7d0;
+      box-shadow: 0 4px 0 #16a34a;
+      transform: translateY(0);
     }
+
     .mole.revealed.bad {
-      background: #ef4444;
+      background: #fecaca;
       box-shadow: 0 4px 0 #b91c1c;
+      transform: translateY(0);
     }
-    #infoBar {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      width: 100%;
-      gap: 12px;
-      margin-bottom: 8px;
-      font-size: 14px;
+
+    .mole span {
+      pointer-events: none;
     }
-    #score {
-      padding: 4px 8px;
-      border-radius: 999px;
-      background: #020617;
-      border: 1px solid #1f2937;
-    }
+
     #controls {
       display: flex;
+      justify-content: space-between;
+      align-items: center;
       gap: 8px;
-      margin-bottom: 8px;
+      margin-top: 4px;
     }
-    button {
-      background: #3b82f6;
+
+    #restartBtn {
+      background: linear-gradient(135deg, #22c55e, #16a34a);
       border: none;
-      color: white;
-      padding: 6px 14px;
+      color: #ecfdf5;
+      padding: 7px 14px;
       border-radius: 999px;
       cursor: pointer;
       font-size: 13px;
-      letter-spacing: 0.02em;
+      letter-spacing: 0.03em;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      box-shadow: 0 8px 18px rgba(22,163,74,0.65);
     }
-    button:hover {
-      background: #2563eb;
+
+    #restartBtn:hover {
+      filter: brightness(1.03);
     }
+
+    #statusBadge {
+      font-size: 11px;
+      padding: 3px 9px;
+      border-radius: 999px;
+      border: 1px solid rgba(148,163,184,0.5);
+      background: rgba(15,23,42,0.85);
+      color: var(--text-subtle);
+    }
+
     #message {
-      min-height: 1.4em;
-      font-size: 14px;
+      min-height: 1.6em;
+      font-size: 13px;
       text-align: center;
-      margin-top: 4px;
+      margin-top: 6px;
     }
+
     #punishmentsBox {
-      margin-top: 14px;
+      margin-top: 10px;
       width: 100%;
-      max-width: 360px;
       font-size: 12px;
-      color: #9ca3af;
-      border-top: 1px dashed #1f2937;
+      color: var(--text-subtle);
+      border-top: 1px dashed rgba(55,65,81,0.9);
       padding-top: 8px;
     }
-    #punishmentsBox textarea {
+
+    #punishmentsBox label {
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    #punishmentsInput {
       width: 100%;
-      min-height: 60px;
-      margin-top: 6px;
-      border-radius: 6px;
+      min-height: 70px;
+      margin-top: 4px;
+      border-radius: 8px;
       border: 1px solid #374151;
       background: #020617;
       color: #e5e7eb;
       padding: 6px 8px;
       font-size: 12px;
       resize: vertical;
-      box-sizing: border-box;
+      font-family: inherit;
     }
+
     #punishmentsBox small {
       display: block;
       margin-top: 4px;
@@ -148,38 +287,65 @@
     }
 
     @media (max-width: 480px) {
-      #grid {
-        grid-template-columns: repeat(3, 80px);
-        grid-template-rows: repeat(3, 80px);
+      #app {
+        padding: 14px 12px 12px;
+        border-radius: 18px;
       }
-      .hole { width: 80px; height: 80px; }
-      .mole { width: 70px; height: 70px; font-size: 28px; }
+      #gridWrapper {
+        padding: 12px 6px 6px;
+      }
+      #grid {
+        gap: 8px;
+      }
     }
   </style>
 </head>
 <body>
-  <h1>打地鼠 - 處罰版</h1>
-  <div id="subtitle">九隻地鼠，其中 3 隻是壞地鼠。每一隻一開始都長一樣，按下去才知道是好是壞。打到 3 隻壞地鼠就結束。</div>
+  <div id="app">
+    <header>
+      <div id="titleBlock">
+        <div id="logo">🦦</div>
+        <div>
+          <h1>打地鼠・處罰局</h1>
+          <p id="subtitle">9 隻地鼠隨機藏 3 隻壞地鼠，按下去才知道結果。</p>
+        </div>
+      </div>
+      <button id="musicToggle" type="button">
+        <span class="icon">🔈</span>
+        <span class="label">音樂關</span>
+      </button>
+    </header>
 
-  <div id="game">
-    <div id="infoBar">
-      <div id="score">已找到壞地鼠：0 / 3</div>
-    </div>
+    <section id="panel">
+      <div id="infoBar">
+        <div id="score">已找到壞地鼠：0 / 3</div>
+        <div id="hint">點任意地鼠，翻開看好壞。</div>
+      </div>
 
-    <div id="grid"></div>
+      <div id="gridWrapper">
+        <div id="grid"></div>
+      </div>
 
-    <div id="controls">
-      <button id="restartBtn">重新洗牌開始</button>
-    </div>
+      <div id="controls">
+        <button id="restartBtn" type="button">
+          <span>🔄</span>
+          <span>重新洗牌開始</span>
+        </button>
+        <div id="statusBadge">進行中</div>
+      </div>
 
-    <div id="message"></div>
+      <div id="message"></div>
 
-    <div id="punishmentsBox">
-      <div>目前的處罰清單（可自行修改，每行一個）：</div>
-      <textarea id="punishmentsInput"></textarea>
-      <small>預設我幫你準備幾個；你可以改成自己的，例如「請大家喝飲料」、「深蹲 20 下」等等。</small>
-    </div>
+      <div id="punishmentsBox">
+        <label for="punishmentsInput">目前的處罰清單（可自行修改，每行一個）：</label>
+        <textarea id="punishmentsInput"></textarea>
+        <small>預設我幫你準備幾個；你可以改成自己的，例如「請大家喝飲料」、「深蹲 20 下」等等。遊戲會從上面的清單隨機抽一個。</small>
+      </div>
+    </section>
   </div>
+
+  <!-- 背景音樂（可切換）-->
+  <audio id="bgm" loop preload="auto" src="https://cdn.pixabay.com/download/audio/2022/03/15/audio_7f546a4df0.mp3?filename=lofi-study-112191.mp3"></audio>
 
   <script>
     const gridEl = document.getElementById('grid');
@@ -187,6 +353,11 @@
     const messageEl = document.getElementById('message');
     const restartBtn = document.getElementById('restartBtn');
     const punishmentsInput = document.getElementById('punishmentsInput');
+    const statusBadge = document.getElementById('statusBadge');
+    const musicToggle = document.getElementById('musicToggle');
+    const musicIcon = musicToggle.querySelector('.icon');
+    const musicLabel = musicToggle.querySelector('.label');
+    const bgm = document.getElementById('bgm');
 
     const defaultPunishments = [
       '請大家喝一杯飲料',
@@ -205,6 +376,66 @@
     let badRevealed = 0;
     let gameOver = false;
 
+    let audioCtx = null;
+
+    function ensureAudioCtx() {
+      if (!audioCtx) {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        if (AudioContext) {
+          audioCtx = new AudioContext();
+        }
+      }
+    }
+
+    function playBeep(freq, duration = 0.12, type = 'sine', gainValue = 0.25) {
+      if (!audioCtx) return;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = type;
+      osc.frequency.value = freq;
+      gain.gain.value = gainValue;
+      osc.connect(gain).connect(audioCtx.destination);
+      const now = audioCtx.currentTime;
+      osc.start(now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
+      osc.stop(now + duration + 0.02);
+    }
+
+    function playGoodHitSound() {
+      ensureAudioCtx();
+      if (!audioCtx) return;
+      playBeep(720, 0.09, 'sine', 0.25);
+    }
+
+    function playBadHitSound() {
+      ensureAudioCtx();
+      if (!audioCtx) return;
+      playBeep(220, 0.16, 'sawtooth', 0.23);
+      setTimeout(() => playBeep(180, 0.18, 'square', 0.18), 90);
+    }
+
+    function toggleMusic() {
+      if (!bgm) return;
+      ensureAudioCtx();
+      if (audioCtx && audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+      if (bgm.paused) {
+        bgm.volume = 0.18;
+        bgm.play().catch(() => {});
+        musicIcon.textContent = '🎵';
+        musicLabel.textContent = '音樂開';
+      } else {
+        bgm.pause();
+        musicIcon.textContent = '🔈';
+        musicLabel.textContent = '音樂關';
+      }
+    }
+
+    musicToggle.addEventListener('click', toggleMusic);
+
+    const punishmentsBox = document.getElementById('punishmentsBox');
+
     function createGrid() {
       gridEl.innerHTML = '';
       holes = [];
@@ -215,7 +446,9 @@
 
         const mole = document.createElement('div');
         mole.className = 'mole';
-        mole.textContent = '❓';
+        const span = document.createElement('span');
+        span.textContent = '❓';
+        mole.appendChild(span);
 
         hole.appendChild(mole);
         gridEl.appendChild(hole);
@@ -239,11 +472,11 @@
     }
 
     function setupMoles() {
-      // 重置狀態
       badRevealed = 0;
       gameOver = false;
       scoreEl.textContent = `已找到壞地鼠：${badRevealed} / ${badCountTotal}`;
       messageEl.textContent = '點任意地鼠，看看是好是壞。';
+      statusBadge.textContent = '進行中';
 
       const indices = [...Array(totalHoles).keys()];
       shuffle(indices);
@@ -253,7 +486,8 @@
         slot.type = badSet.has(i) ? 'bad' : 'good';
         slot.revealed = false;
         slot.mole.classList.remove('revealed', 'good', 'bad');
-        slot.mole.textContent = '❓';
+        slot.hole.classList.remove('revealed-good', 'revealed-bad');
+        slot.mole.querySelector('span').textContent = '❓';
       });
     }
 
@@ -274,34 +508,48 @@
     function handleHit(index) {
       if (gameOver) return;
       const slot = holes[index];
-      if (slot.revealed) return; // 同一隻按一次就好
+      if (slot.revealed) return;
+
+      ensureAudioCtx();
 
       slot.revealed = true;
       const mole = slot.mole;
+      const span = mole.querySelector('span');
       mole.classList.add('revealed');
 
       if (slot.type === 'good') {
         mole.classList.add('good');
-        mole.textContent = '🐹';
+        slot.hole.classList.add('revealed-good');
+        span.textContent = '🐹';
         messageEl.textContent = '👍 這隻是好地鼠，安全～';
+        playGoodHitSound();
       } else {
         mole.classList.add('bad');
-        mole.textContent = '💣';
+        slot.hole.classList.add('revealed-bad');
+        span.textContent = '💣';
         badRevealed++;
         const p = randomPunishment();
         messageEl.textContent = '⚠️ 壞地鼠！處罰：' + p;
         scoreEl.textContent = `已找到壞地鼠：${badRevealed} / ${badCountTotal}`;
+        playBadHitSound();
 
         if (badRevealed >= badCountTotal) {
           gameOver = true;
+          statusBadge.textContent = '本局結束';
           messageEl.textContent += ' ｜ 3 隻壞地鼠都被找到，遊戲結束。';
         }
       }
     }
 
-    restartBtn.addEventListener('click', setupMoles);
+    restartBtn.addEventListener('click', () => {
+      setupMoles();
+      // 第一個互動時試著開啟音樂（若使用者有開啟）
+      if (!bgm.paused) {
+        toggleMusic();
+        toggleMusic();
+      }
+    });
 
-    // 初始化
     createGrid();
     setupMoles();
   </script>
