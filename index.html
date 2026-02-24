@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <title>打地鼠遊戲 - dragonBill7</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0" />
   <style>
     :root {
       --bg: #020617;
@@ -23,6 +23,7 @@
       margin: 0;
       touch-action: manipulation;
       min-height: 100vh;
+      overscroll-behavior: none;
       font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
       background:
         radial-gradient(circle at top left, #1e293b 0, transparent 55%),
@@ -360,6 +361,8 @@
     const musicLabel = musicToggle.querySelector('.label');
     const bgm = document.getElementById('bgm');
 
+    const LS_KEY = 'wam_punishments_v1';
+
     const defaultPunishments = [
       '請大家喝一杯飲料',
       '深蹲 20 下',
@@ -369,7 +372,17 @@
       '讓旁邊的人指定一個小懲罰（友善版）'
     ];
 
-    punishmentsInput.value = defaultPunishments.join('\n');
+    // 從 localStorage 載入自訂處罰清單（如果有）
+    try {
+      const saved = localStorage.getItem(LS_KEY);
+      if (saved) {
+        punishmentsInput.value = JSON.parse(saved).join('\n');
+      } else {
+        punishmentsInput.value = defaultPunishments.join('\n');
+      }
+    } catch (e) {
+      punishmentsInput.value = defaultPunishments.join('\n');
+    }
 
     const totalHoles = 9;
     const badCountTotal = 3;
@@ -502,6 +515,20 @@
         .filter(Boolean);
       return lines.length ? lines : defaultPunishments;
     }
+
+    // 即時把處罰清單存到 localStorage，避免重整後消失
+    punishmentsInput.addEventListener('input', () => {
+      const lines = punishmentsInput.value
+        .split(/\r?\n/)
+        .map(s => s.trim())
+        .filter(Boolean);
+      try {
+        localStorage.setItem(LS_KEY, JSON.stringify(lines));
+      } catch (e) {
+        // 如果使用者關閉 storage 或空間不足，就安靜失敗即可
+      }
+    });
+
 
     function randomPunishment() {
       const list = getPunishments();
